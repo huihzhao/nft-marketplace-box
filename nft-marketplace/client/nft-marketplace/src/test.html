@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>opBNB NFT Marketplace</title>
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.5.0/dist/web3.min.js"></script>
+</head>
+
+<body>
+    <h1>opBNB NFT Marketplace</h1>
+    <button id="connectButton">Connect Wallet</button>
+    <p id="walletAddress"></p>
+
+    <label for="nftURI">NFT URI:</label>
+    <input type="text" id="nftURI" placeholder="Enter the NFT URI">
+
+    <button id="mintButton" disabled>Mint NFT</button>
+
+    <script>
+        // Connect to the Ethereum network using web3.js and MetaMask
+        async function connectToBlockchain() {
+            if (window.ethereum) {
+                try {
+                    await window.ethereum.request({ method: 'eth_requestAccounts' });
+                    window.web3 = new Web3(window.ethereum);
+                    return true;
+                } catch (error) {
+                    console.error('Failed to connect to MetaMask:', error);
+                    return false;
+                }
+            } else {
+                console.error('MetaMask extension not detected.');
+                return false;
+            }
+        }
+
+        // Mint NFT function
+        async function mintNFT(tokenURI) {
+            try {
+                const contractAddress = '0x5304e45dfc12630e885c0392874b65f12bf2b26e'; // Replace with your deployed contract address
+
+                // Replace with the actual ABI of your BoredPetsNFT contract
+                const contractABI = [
+                    // ... contract ABI here ...
+                ];
+
+                // Connect to the contract
+                const contract = new web3.eth.Contract(contractABI, contractAddress);
+
+                // Mint NFT
+                const accounts = await web3.eth.getAccounts();
+                await contract.methods.mint(tokenURI).send({ from: accounts[0] });
+
+                console.log('NFT minted successfully!');
+            } catch (error) {
+                console.error('Error minting NFT:', error);
+            }
+        }
+
+        // Button click event handler for connecting wallet
+        document.getElementById('connectButton').addEventListener('click', async () => {
+            // Connect to the blockchain
+            const connected = await connectToBlockchain();
+
+            if (connected) {
+                // Display wallet address
+                const accounts = await web3.eth.getAccounts();
+                const walletAddress = accounts[0];
+                document.getElementById('walletAddress').textContent = `Connected Wallet Address: ${walletAddress}`;
+
+                // Enable minting button
+                document.getElementById('mintButton').disabled = false;
+                console.log('Wallet connected successfully!');
+
+
+            } else {
+                console.error('Unable to connect to the blockchain.');
+            }
+        });
+
+        // Button click event handler for minting NFT
+        document.getElementById('mintButton').addEventListener('click', async () => {
+            // Call the mintNFT function
+            const nftURI = document.getElementById('nftURI').value;
+            if (!nftURI) {
+                console.error('Please enter the NFT URI.');
+                return;
+            }
+
+            // Call the mintNFT function with the entered NFT URI
+            await mintNFT(nftURI);
+        });
+    </script>
+</body>
+
+</html>

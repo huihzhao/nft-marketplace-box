@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>opBNB NFT Marketplace</title>
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.5.0/dist/web3.min.js"></script>
+</head>
+
+<body>
+    <h1>Bored Pets NFT Marketplace</h1>
+    <button id="connectButton">Connect Wallet</button>
+    <p id="walletAddress"></p>
+
+    <!-- Mint Token Form -->
+    <h2>Mint a Token</h2>
+    <label for="nftURI">NFT URI:</label>
+    <input type="text" id="nftURI" placeholder="Enter the NFT URI">
+    <button id="mintButton" disabled>Mint NFT</button>
+
+
+    <!-- List Token Form -->
+    <h2>List a Token</h2>
+    <form id="listTokenForm">
+        <label for="tokenId">Token ID:</label>
+        <input type="text" id="tokenId" name="tokenId" required>
+        <label for="price">Price (in ether):</label>
+        <input type="text" id="price" name="price" required>
+        <button type="submit">List Token</button>
+    </form>
+
+
+    <!-- Display Listed Tokens -->
+    <h2>Listed Tokens</h2>
+    <div id="listedTokens"></div>
+
+
+    <script>
+
+        const MARKETPLACE_ADDRESS = "0xF6ec4a8E7C2BcFC2e69434BE0421c229B894a170";
+        const NFT_CONTRACT_ADDRESS = "0xb75cF4F734f35d57582bd97872d1Cce534192BbC";
+        const LISTING_FEE = 100000000000000;
+        // Connect to the Ethereum network using web3.js and MetaMask
+        async function connectToBlockchain() {
+            if (window.ethereum) {
+                try {
+                    await window.ethereum.request({ method: 'eth_requestAccounts' });
+                    window.web3 = new Web3(window.ethereum);
+                    return true;
+                } catch (error) {
+                    console.error('Failed to connect to MetaMask:', error);
+                    return false;
+                }
+            } else {
+                console.error('MetaMask extension not detected.');
+                return false;
+            }
+        }
+
+        // Mint NFT function
+        async function mintNFT(tokenURI) {
+            try {
+
+                //const contractAddress = '0x5304e45dfc12630e885c0392874b65f12bf2b26e'; // Replace with your deployed contract address
+                const contractABI = [
+                    { "inputs": [{ "internalType": "address", "name": "_marketplaceContract", "type": "address" }], "stateMutability": "nonpayable", "type": "constructor" }, { "anonymous": false, "inputs": [{ "indexed": true, "internalType": "address", "name": "owner", "type": "address" }, { "indexed": true, "internalType": "address", "name": "approved", "type": "address" }, { "indexed": true, "internalType": "uint256", "name": "tokenId", "type": "uint256" }], "name": "Approval", "type": "event", "signature": "0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925" }, { "anonymous": false, "inputs": [{ "indexed": true, "internalType": "address", "name": "owner", "type": "address" }, { "indexed": true, "internalType": "address", "name": "operator", "type": "address" }, { "indexed": false, "internalType": "bool", "name": "approved", "type": "bool" }], "name": "ApprovalForAll", "type": "event", "signature": "0x17307eab39ab6107e8899845ad3d59bd9653f200f220920489ca2b5937696c31" }, { "anonymous": false, "inputs": [{ "indexed": false, "internalType": "uint256", "name": "_fromTokenId", "type": "uint256" }, { "indexed": false, "internalType": "uint256", "name": "_toTokenId", "type": "uint256" }], "name": "BatchMetadataUpdate", "type": "event", "signature": "0x6bd5c950a8d8df17f772f5af37cb3655737899cbf903264b9795592da439661c" }, { "anonymous": false, "inputs": [{ "indexed": false, "internalType": "uint256", "name": "_tokenId", "type": "uint256" }], "name": "MetadataUpdate", "type": "event", "signature": "0xf8e1a15aba9398e019f0b49df1a4fde98ee17ae345cb5f6b5e2c27f5033e8ce7" }, { "anonymous": false, "inputs": [{ "indexed": false, "internalType": "uint256", "name": "", "type": "uint256" }], "name": "NFTMinted", "type": "event", "signature": "0xd9dc24857f317ed9abbbb42e920ede0104231eb1d3d70236a74887ffaf159868" }, { "anonymous": false, "inputs": [{ "indexed": true, "internalType": "address", "name": "from", "type": "address" }, { "indexed": true, "internalType": "address", "name": "to", "type": "address" }, { "indexed": true, "internalType": "uint256", "name": "tokenId", "type": "uint256" }], "name": "Transfer", "type": "event", "signature": "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef" }, { "inputs": [{ "internalType": "address", "name": "to", "type": "address" }, { "internalType": "uint256", "name": "tokenId", "type": "uint256" }], "name": "approve", "outputs": [], "stateMutability": "nonpayable", "type": "function", "signature": "0x095ea7b3" }, { "inputs": [{ "internalType": "address", "name": "owner", "type": "address" }], "name": "balanceOf", "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "stateMutability": "view", "type": "function", "constant": true, "signature": "0x70a08231" }, { "inputs": [{ "internalType": "uint256", "name": "tokenId", "type": "uint256" }], "name": "getApproved", "outputs": [{ "internalType": "address", "name": "", "type": "address" }], "stateMutability": "view", "type": "function", "constant": true, "signature": "0x081812fc" }, { "inputs": [{ "internalType": "address", "name": "owner", "type": "address" }, { "internalType": "address", "name": "operator", "type": "address" }], "name": "isApprovedForAll", "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }], "stateMutability": "view", "type": "function", "constant": true, "signature": "0xe985e9c5" }, { "inputs": [{ "internalType": "string", "name": "_tokenURI", "type": "string" }], "name": "mint", "outputs": [], "stateMutability": "nonpayable", "type": "function", "signature": "0xd85d3d27" }, { "inputs": [], "name": "name", "outputs": [{ "internalType": "string", "name": "", "type": "string", "value": "Bored Pets Yacht Club" }], "stateMutability": "view", "type": "function", "constant": true, "signature": "0x06fdde03" }, { "inputs": [{ "internalType": "uint256", "name": "tokenId", "type": "uint256" }], "name": "ownerOf", "outputs": [{ "internalType": "address", "name": "", "type": "address" }], "stateMutability": "view", "type": "function", "constant": true, "signature": "0x6352211e" }, { "inputs": [{ "internalType": "address", "name": "from", "type": "address" }, { "internalType": "address", "name": "to", "type": "address" }, { "internalType": "uint256", "name": "tokenId", "type": "uint256" }], "name": "safeTransferFrom", "outputs": [], "stateMutability": "nonpayable", "type": "function", "signature": "0x42842e0e" }, { "inputs": [{ "internalType": "address", "name": "from", "type": "address" }, { "internalType": "address", "name": "to", "type": "address" }, { "internalType": "uint256", "name": "tokenId", "type": "uint256" }, { "internalType": "bytes", "name": "data", "type": "bytes" }], "name": "safeTransferFrom", "outputs": [], "stateMutability": "nonpayable", "type": "function", "signature": "0xb88d4fde" }, { "inputs": [{ "internalType": "address", "name": "operator", "type": "address" }, { "internalType": "bool", "name": "approved", "type": "bool" }], "name": "setApprovalForAll", "outputs": [], "stateMutability": "nonpayable", "type": "function", "signature": "0xa22cb465" }, { "inputs": [{ "internalType": "bytes4", "name": "interfaceId", "type": "bytes4" }], "name": "supportsInterface", "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }], "stateMutability": "view", "type": "function", "constant": true, "signature": "0x01ffc9a7" }, { "inputs": [], "name": "symbol", "outputs": [{ "internalType": "string", "name": "", "type": "string", "value": "BPYC" }], "stateMutability": "view", "type": "function", "constant": true, "signature": "0x95d89b41" }, { "inputs": [{ "internalType": "uint256", "name": "tokenId", "type": "uint256" }], "name": "tokenURI", "outputs": [{ "internalType": "string", "name": "", "type": "string" }], "stateMutability": "view", "type": "function", "constant": true, "signature": "0xc87b56dd" }, { "inputs": [{ "internalType": "address", "name": "from", "type": "address" }, { "internalType": "address", "name": "to", "type": "address" }, { "internalType": "uint256", "name": "tokenId", "type": "uint256" }], "name": "transferFrom", "outputs": [], "stateMutability": "nonpayable", "type": "function", "signature": "0x23b872dd" }
+                ]; // Replace with your contract ABI
+
+                const contract = new web3.eth.Contract(contractABI, NFT_CONTRACT_ADDRESS);
+                console.log("before get accounts");
+                // Mint NFT
+                const accounts = await web3.eth.getAccounts();
+                await contract.methods.mint(tokenURI).send({ from: accounts[0] });
+
+                console.log('NFT minted successfully!');
+            } catch (error) {
+                console.error('Error minting NFT:', error);
+            }
+        }
+
+
+        // Button click event handler for connecting wallet
+        document.getElementById('connectButton').addEventListener('click', async () => {
+            // Connect to the blockchain
+            const connected = await connectToBlockchain();
+
+            if (connected) {
+                // Display wallet address
+                const accounts = await web3.eth.getAccounts();
+                const walletAddress = accounts[0];
+                document.getElementById('walletAddress').textContent = `Connected Wallet Address: ${walletAddress}`;
+
+                // Enable minting button
+                document.getElementById('mintButton').disabled = false;
+                console.log('Wallet connected successfully!');
+
+
+            } else {
+                console.error('Unable to connect to the blockchain.');
+            }
+        });
+
+        // Button click event handler for minting NFT
+        document.getElementById('mintButton').addEventListener('click', async () => {
+            // Call the mintNFT function
+            const nftURI = document.getElementById('nftURI').value;
+            console.log(nftURI)
+            if (!nftURI) {
+                console.error('Please enter the NFT URI.');
+                return;
+            }
+
+            // Call the mintNFT function with the entered NFT URI
+            await mintNFT(nftURI);
+        });
+
+        // Button click event handler for listing NFT
+        // Function to handle the form submission
+        async function listToken(event) {
+            event.preventDefault();
+
+            const tokenId = document.getElementById("tokenId").value;
+            const price = document.getElementById("price").value;
+
+            const MARKETPLACE_ABI = [
+                { "inputs": [], "stateMutability": "nonpayable", "type": "constructor" }, { "anonymous": false, "inputs": [{ "indexed": false, "internalType": "address", "name": "nftContract", "type": "address" }, { "indexed": false, "internalType": "uint256", "name": "tokenId", "type": "uint256" }, { "indexed": false, "internalType": "address", "name": "seller", "type": "address" }, { "indexed": false, "internalType": "address", "name": "owner", "type": "address" }, { "indexed": false, "internalType": "uint256", "name": "price", "type": "uint256" }], "name": "NFTListed", "type": "event", "signature": "0xa0c6c0d02d86fdacecbaa5fdf5894bab204e31a778250474108540733a9b8d19" }, { "anonymous": false, "inputs": [{ "indexed": false, "internalType": "address", "name": "nftContract", "type": "address" }, { "indexed": false, "internalType": "uint256", "name": "tokenId", "type": "uint256" }, { "indexed": false, "internalType": "address", "name": "seller", "type": "address" }, { "indexed": false, "internalType": "address", "name": "owner", "type": "address" }, { "indexed": false, "internalType": "uint256", "name": "price", "type": "uint256" }], "name": "NFTSold", "type": "event", "signature": "0x16f1dbd97e6bf646d429ed186cce832f1f7fd9907814293b83181e9970ab7bd2" }, { "inputs": [], "name": "LISTING_FEE", "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256", "value": "100000000000000" }], "stateMutability": "view", "type": "function", "constant": true, "signature": "0x2b86ae38" }, { "inputs": [{ "internalType": "address", "name": "_nftContract", "type": "address" }, { "internalType": "uint256", "name": "_tokenId", "type": "uint256" }], "name": "buyNft", "outputs": [], "stateMutability": "payable", "type": "function", "payable": true, "signature": "0x4ddf4f8f" }, { "inputs": [], "name": "getListedNfts", "outputs": [{ "components": [{ "internalType": "address", "name": "nftContract", "type": "address" }, { "internalType": "uint256", "name": "tokenId", "type": "uint256" }, { "internalType": "address payable", "name": "seller", "type": "address" }, { "internalType": "address payable", "name": "owner", "type": "address" }, { "internalType": "uint256", "name": "price", "type": "uint256" }, { "internalType": "bool", "name": "listed", "type": "bool" }], "internalType": "struct Marketplace.NFT[]", "name": "", "type": "tuple[]", "value": [] }], "stateMutability": "view", "type": "function", "constant": true, "signature": "0x8d6cb3fb" }, { "inputs": [], "name": "getMyListedNfts", "outputs": [{ "components": [{ "internalType": "address", "name": "nftContract", "type": "address" }, { "internalType": "uint256", "name": "tokenId", "type": "uint256" }, { "internalType": "address payable", "name": "seller", "type": "address" }, { "internalType": "address payable", "name": "owner", "type": "address" }, { "internalType": "uint256", "name": "price", "type": "uint256" }, { "internalType": "bool", "name": "listed", "type": "bool" }], "internalType": "struct Marketplace.NFT[]", "name": "", "type": "tuple[]", "value": [] }], "stateMutability": "view", "type": "function", "constant": true, "signature": "0x1f4cc4db" }, { "inputs": [], "name": "getMyNfts", "outputs": [{ "components": [{ "internalType": "address", "name": "nftContract", "type": "address" }, { "internalType": "uint256", "name": "tokenId", "type": "uint256" }, { "internalType": "address payable", "name": "seller", "type": "address" }, { "internalType": "address payable", "name": "owner", "type": "address" }, { "internalType": "uint256", "name": "price", "type": "uint256" }, { "internalType": "bool", "name": "listed", "type": "bool" }], "internalType": "struct Marketplace.NFT[]", "name": "", "type": "tuple[]", "value": [] }], "stateMutability": "view", "type": "function", "constant": true, "signature": "0x047b07bf" }, { "inputs": [{ "internalType": "address", "name": "_nftContract", "type": "address" }, { "internalType": "uint256", "name": "_tokenId", "type": "uint256" }, { "internalType": "uint256", "name": "_price", "type": "uint256" }], "name": "listNft", "outputs": [], "stateMutability": "payable", "type": "function", "payable": true, "signature": "0xc922b17c" }, { "inputs": [{ "internalType": "address", "name": "_nftContract", "type": "address" }, { "internalType": "uint256", "name": "_tokenId", "type": "uint256" }, { "internalType": "uint256", "name": "_price", "type": "uint256" }], "name": "resellNft", "outputs": [], "stateMutability": "payable", "type": "function", "payable": true, "signature": "0x34f5b624" }
+            ];
+
+            
+            try {
+                const accounts = await ethereum.request({ method: "eth_requestAccounts" });
+                console.log("Start to list token " + NFT_CONTRACT_ADDRESS, tokenId, price);
+                const marketplaceContract = new web3.eth.Contract(MARKETPLACE_ABI, MARKETPLACE_ADDRESS);
+
+                // Call the listNft function in the marketplace contract
+                await marketplaceContract.methods.listNft(NFT_CONTRACT_ADDRESS, tokenId, web3.utils.toWei(price))
+                    .send({ from: accounts[0], value: LISTING_FEE});
+
+                // Display success message or perform any other actions
+                console.log("Token listed successfully");
+            } catch (error) {
+                // Display error message or perform any other error handling
+                console.error("Error listing token:", error);
+            }
+        }
+
+        // Add event listener to the form submission
+        const form = document.getElementById("listTokenForm");
+        form.addEventListener("submit", listToken);
+
+    </script>
+</body>
+
+</html>
